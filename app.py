@@ -52,6 +52,11 @@ def login():
                 next = url_for('welcome_user')
 
             return redirect(next)
+        else:
+            form.error_msg.label = 'Invalid Email Address or Password'
+    else:
+        for key in form.errors.keys():
+            form.error_msg.label = form.errors[key][0]
     return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -59,14 +64,27 @@ def register():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-        user = User(email=form.email.data,
-                    username=form.username.data,
-                    password=form.password.data)
+        check_email = form.check_email(form.email)
+        check_username = form.check_username(form.username)    
+        if check_email and check_username:
+            user = User(email=form.email.data,
+                        username=form.username.data,
+                        password=form.password.data)
 
-        db.session.add(user)
-        db.session.commit()
-        flash('Thanks for registering! Now you can login!')
-        return redirect(url_for('login'))
+            db.session.add(user)
+            db.session.commit()
+            flash('Thanks for registering! Now you can login!')
+            return redirect(url_for('login'))
+        elif not check_email:
+            flash('Your email has been registered already!')
+            form.error_msg.label = 'Your email has been registered already!'
+        else:
+            flash('Sorry, that username is taken!')
+            form.error_msg.label = 'Sorry, that username is taken!'
+    else:
+        for key in form.errors.keys():
+            form.error_msg.label = form.errors[key][0]
+
     return render_template('register.html', form=form)
 
 if __name__ == '__main__':
